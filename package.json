@@ -1,0 +1,31 @@
+{
+  "name": "pagebrew",
+  "version": "1.0.0",
+  "description": "Zero-config static site generator for your markdown files",
+  "main": "index.js",
+  "bin": {
+    "pagebrew": "./bin/cli.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["ssg", "static-site-generator", "markdown", "tailwind", "ejs", "pagebrew"],
+  "author": "Bharat Mandava",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "commander": "^11.0.0",
+    "ejs": "^3.1.9",
+    "front-matter": "^4.0.2",
+    "marked": "^9.0.0",
+    "fs-extra": "^11.1.1",
+    "glob": "^10.3.3",
+    "tailwindcss": "^3.3.3",
+    "@tailwindcss/typography": "^0.5.10",
+    "postcss": "^8.4.31",
+    "autoprefixer": "^10.4.16",
+    "chokidar": "^3.5.3"
+  }
+}

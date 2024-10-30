@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog | Pagebrew</title>
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+    <%- include('partials/header.ejs') %>
+    <main class="mx-auto px-4 py-8 max-w-screen-md">
+        <div class="prose dark:prose-invert max-w-none lg:prose-lg mx-auto">
+            <h1>Recent Posts</h1>
+            <div class="space-y-8">
+                <% posts.forEach(post => { %>
+                    <div class="border-b border-gray-200 dark:border-gray-800 pb-8">
+                        <h2 class="mb-2">
+                            <a href="<%= post.url %>"><%= post.title %></a>
+                        </h2>
+                        <div class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                            <%= post.date.toLocaleDateString() %>
+                            <% if (post.tags && post.tags.length > 0) { %>
+                                • 
+                                <% post.tags.forEach((tag, index) => { %>
+                                    <span class="inline-block bg-gray-100 dark:bg-gray-800 rounded px-2 py-1 text-sm">
+                                        <%= tag %>
+                                    </span>
+                                <% }) %>
+                            <% } %>
+                        </div>
+                        <% if (post.description) { %>
+                            <p class="text-gray-700 dark:text-gray-300"><%= post.description %></p>
+                        <% } %>
+                        <a href="<%= post.url %>" class="hover:underline">Read more →</a>
+                    </div>
+                <% }) %>
+            </div>
+        </div>
+    </main>
+
+    <%- include('partials/footer.ejs') %>
+</body>
+</html>
