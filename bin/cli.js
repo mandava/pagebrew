@@ -6,14 +6,20 @@ const { createServer } = require('../src/server');
 
 program
   .name('pagebrew')
-  .description('Modern static site generator with Tailwind JIT')
-  .argument('<input>', 'Input directory containing markdown files')
-  .argument('<output>', 'Output directory for generated site')
+  .description('Zero-config static site generator for your markdown files')
+  .argument('[input]', 'Input directory containing markdown files')
+  .argument('[output]', 'Output directory for generated site')
   .option('-w, --watch', 'Watch for file changes')
   .option('-s, --serve', 'Serve output files on local server')
+  .option('-t, --theme <theme>', 'Theme to use (default: default)')
   .action((input, output, options) => {
+    if (!input || !output) {
+      program.help();
+      return;
+    }
+
     if (options.serve || options.watch) {
-      watch(input, output);
+      watch(input, output, options);
     } else {
       generate(input, output, options);
     }

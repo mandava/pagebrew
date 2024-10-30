@@ -8,18 +8,18 @@ const chokidar = require('chokidar');
 const { processMarkdown } = require('./markdown');
 const { getTemplate } = require('./utils');
 
-async function processCSS(outputDir) {
-  const defaultCssPath = path.join(__dirname, 'defaults/css/style.css');
+async function processCSS(outputDir, theme = 'default') {
+  const defaultCssPath = path.join(__dirname, `themes/${theme}/css/style.css`);
   const cssContent = await fs.readFile(defaultCssPath, 'utf-8');
 
   const configPath = path.join(process.cwd(), 'tailwind.config.js');
   const tailwindConfig = await fs.pathExists(configPath)
     ? require(configPath)
-    : require('./defaults/tailwind.config.js');
+    : require('./tailwind.config.js');
 
   tailwindConfig.content = [
     path.join(outputDir, '**/*.html'),
-    path.join(__dirname, 'defaults/templates/**/*.ejs')
+    path.join(__dirname, `themes/${theme}/**/*.ejs`)
   ];
 
   const result = await postcss([
@@ -50,10 +50,13 @@ async function getAllPosts(inputDir) {
   return posts.sort((a, b) => b.date - a.date);
 }
 
-async function generate(inputDir, outputDir, options) {
+async function generate(inputDir, outputDir, options = {}) {
+  const theme = options.theme || 'default';
+  
   console.log('🧹 Cleaning output directory...');
   await fs.emptyDir(outputDir);
 
+  console.log(`🎨 Using theme: ${theme}`);
   console.log('🍺 Brewing your site...');
   await fs.ensureDir(path.join(outputDir, 'blog'));
 
@@ -61,7 +64,7 @@ async function generate(inputDir, outputDir, options) {
   const hasCustomTemplates = await fs.pathExists(templateDir);
 
   console.log('🎨 Processing styles...');
-  await processCSS(outputDir);
+  await processCSS(outputDir, theme);
 
   const files = await glob('**/*.md', { cwd: inputDir });
   const posts = await getAllPosts(inputDir);
@@ -74,12 +77,13 @@ async function generate(inputDir, outputDir, options) {
     const { html, metadata } = await processMarkdown(content);
     
     const isIndex = file === 'index.md';
-    const isBlogPost = file.startsWith('blog/') && file !== 'blog/index.md';
-    const template = isBlogPost ? 'post' : 'index';
+    const isBlogPost = file.startsWith('blog/');
+    const template = isBlogPost ? 'post' : (isIndex ? 'index' : 'base');
     
-    const templatePath = hasCustomTemplates 
-      ? path.join(templateDir, `${template}.ejs`)
-      : path.join(__dirname, 'defaults/templates', `${template}.ejs`);
+    const customTemplatePath = path.join(templateDir, `${template}.ejs`);
+    const templatePath = hasCustomTemplates && await fs.pathExists(customTemplatePath)
+      ? customTemplatePath
+      : path.join(__dirname, `themes/${theme}`, `${template}.ejs`);
     
     const templateFn = await getTemplate(templatePath);
     const rendered = templateFn({
@@ -103,9 +107,10 @@ async function generate(inputDir, outputDir, options) {
 
   // Then generate the blog index page
   console.log('📚 Generating blog index...');
-  const blogTemplatePath = hasCustomTemplates 
-    ? path.join(templateDir, 'blog.ejs')
-    : path.join(__dirname, 'defaults/templates', 'blog.ejs');
+  const customBlogTemplatePath = path.join(templateDir, 'blog.ejs');
+  const blogTemplatePath = hasCustomTemplates && await fs.pathExists(customBlogTemplatePath)
+    ? customBlogTemplatePath
+    : path.join(__dirname, `themes/${theme}`, 'blog.ejs');
   
   const blogTemplateFn = await getTemplate(blogTemplatePath);
   const blogRendered = blogTemplateFn({
@@ -122,11 +127,11 @@ async function generate(inputDir, outputDir, options) {
   console.log('🎉 Site built successfully!');
 }
 
-async function watch(inputDir, outputDir) {
+async function watch(inputDir, outputDir, options = {}) {
   console.log('👀 Watching for changes...');
   
   // Initial build
-  await generate(inputDir, outputDir, { watch: true });
+  await generate(inputDir, outputDir, options);
 
   // Watch markdown files
   chokidar.watch('**/*.md', {
@@ -134,7 +139,7 @@ async function watch(inputDir, outputDir) {
     ignoreInitial: true
   }).on('all', (event, file) => {
     console.log(`📝 ${event}: ${file}`);
-    generate(inputDir, outputDir, { watch: true });
+    generate(inputDir, outputDir, options);
   });
 
   // Watch template files and rebuild CSS
