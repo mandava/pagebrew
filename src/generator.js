@@ -50,10 +50,43 @@ async function getAllPosts(inputDir) {
   return posts.sort((a, b) => b.date - a.date);
 }
 
+async function getAllPages(inputDir) {
+  let pages = [
+    { url: '/', title: 'Home' }
+  ];
+
+  const files = await glob('**/*.md', { cwd: inputDir });
+
+  for (const file of files) {
+    if (file === 'index.md') continue;
+    if (file.startsWith('blog/')) {
+      // Only add the blog index page once
+      if (!pages.find(p => p.url === '/blog.html')) {
+        pages.push({ url: '/blog.html', title: 'Blog' });
+      }
+      continue;
+    }
+
+    const content = await fs.readFile(path.join(inputDir, file), 'utf-8');
+    const { metadata } = await processMarkdown(content);
+    pages.push({
+      url: '/' + file.replace('.md', '.html'),
+      title: metadata.title
+    });
+  }
+
+  // Remove home page, sort remaining pages, then add home page back at start
+  const homePage = pages.shift();
+  pages.sort((a, b) => a.title.localeCompare(b.title));
+  pages.unshift(homePage);
+
+  return pages;
+}
+
 async function generate(inputDir, outputDir, options = {}) {
   try {
     const theme = options.theme || 'default';
-    
+
     console.log('🧹 Cleaning output directory...');
     await fs.emptyDir(outputDir);
 
@@ -69,30 +102,37 @@ async function generate(inputDir, outputDir, options = {}) {
 
     const files = await glob('**/*.md', { cwd: inputDir });
     const posts = await getAllPosts(inputDir);
-    
+    const pages = await getAllPages(inputDir);
     console.log('📝 Processing markdown files...');
 
     // First process all markdown files
     for (const file of files) {
       const content = await fs.readFile(path.join(inputDir, file), 'utf-8');
       const { html, metadata } = await processMarkdown(content);
-      
+
       const isIndex = file === 'index.md';
       const isBlogPost = file.startsWith('blog/');
       const template = isBlogPost ? 'post' : (isIndex ? 'index' : 'base');
-      
+
       const customTemplatePath = path.join(templateDir, `${template}.ejs`);
       const templatePath = hasCustomTemplates && await fs.pathExists(customTemplatePath)
         ? customTemplatePath
         : path.join(__dirname, `themes/${theme}`, `${template}.ejs`);
-      
+
+      let currentPage = '/';
+      if (!isIndex) {
+        currentPage = isBlogPost ? '/blog.html' : '/' + file.replace('.md', '.html');
+      }
+
       const templateFn = await getTemplate(templatePath);
       const rendered = templateFn({
         content: html,
         metadata,
-        posts
+        posts,
+        pages,
+        currentPage
       });
-      
+
       let outFile;
       if (isIndex) {
         outFile = path.join(outputDir, 'index.html');
@@ -101,7 +141,7 @@ async function generate(inputDir, outputDir, options = {}) {
       } else {
         outFile = path.join(outputDir, file.replace('.md', '.html'));
       }
-      
+
       await fs.outputFile(outFile, rendered);
     }
 
@@ -110,16 +150,18 @@ async function generate(inputDir, outputDir, options = {}) {
     const blogTemplatePath = hasCustomTemplates && await fs.pathExists(customBlogTemplatePath)
       ? customBlogTemplatePath
       : path.join(__dirname, `themes/${theme}`, 'blog.ejs');
-    
+
     const blogTemplateFn = await getTemplate(blogTemplatePath);
     const blogRendered = blogTemplateFn({
       posts,
+      pages,
+      currentPage: '/blog.html',
       metadata: {
         title: 'Blog',
         description: 'All blog posts'
       }
     });
-    
+
     await fs.outputFile(path.join(outputDir, 'blog.html'), blogRendered);
 
     console.log('🎉 Site built successfully!');
@@ -132,7 +174,7 @@ async function generate(inputDir, outputDir, options = {}) {
 async function watch(inputDir, outputDir, options = {}) {
   try {
     console.log('👀 Watching for changes...');
-    
+
     // Initial build
     await generate(inputDir, outputDir, options);
 
