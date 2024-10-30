@@ -51,105 +51,112 @@ async function getAllPosts(inputDir) {
 }
 
 async function generate(inputDir, outputDir, options = {}) {
-  const theme = options.theme || 'default';
-  
-  console.log('🧹 Cleaning output directory...');
-  await fs.emptyDir(outputDir);
-
-  console.log(`🎨 Using theme: ${theme}`);
-  console.log('🍺 Brewing your site...');
-  await fs.ensureDir(path.join(outputDir, 'blog'));
-
-  const templateDir = path.join(inputDir, 'templates');
-  const hasCustomTemplates = await fs.pathExists(templateDir);
-
-  console.log('🎨 Processing styles...');
-  await processCSS(outputDir, theme);
-
-  const files = await glob('**/*.md', { cwd: inputDir });
-  const posts = await getAllPosts(inputDir);
-  
-  console.log('📝 Processing markdown files...');
-  
-  // First process all markdown files
-  for (const file of files) {
-    const content = await fs.readFile(path.join(inputDir, file), 'utf-8');
-    const { html, metadata } = await processMarkdown(content);
+  try {
+    const theme = options.theme || 'default';
     
-    const isIndex = file === 'index.md';
-    const isBlogPost = file.startsWith('blog/');
-    const template = isBlogPost ? 'post' : (isIndex ? 'index' : 'base');
+    console.log('🧹 Cleaning output directory...');
+    await fs.emptyDir(outputDir);
+
+    console.log(`🎨 Using theme: ${theme}`);
+    console.log('🍺 Brewing your site...');
+    await fs.ensureDir(path.join(outputDir, 'blog'));
+
+    const templateDir = path.join(inputDir, 'templates');
+    const hasCustomTemplates = await fs.pathExists(templateDir);
+
+    console.log('🎨 Processing styles...');
+    await processCSS(outputDir, theme);
+
+    const files = await glob('**/*.md', { cwd: inputDir });
+    const posts = await getAllPosts(inputDir);
     
-    const customTemplatePath = path.join(templateDir, `${template}.ejs`);
-    const templatePath = hasCustomTemplates && await fs.pathExists(customTemplatePath)
-      ? customTemplatePath
-      : path.join(__dirname, `themes/${theme}`, `${template}.ejs`);
+    console.log('📝 Processing markdown files...');
+
+    // First process all markdown files
+    for (const file of files) {
+      const content = await fs.readFile(path.join(inputDir, file), 'utf-8');
+      const { html, metadata } = await processMarkdown(content);
+      
+      const isIndex = file === 'index.md';
+      const isBlogPost = file.startsWith('blog/');
+      const template = isBlogPost ? 'post' : (isIndex ? 'index' : 'base');
+      
+      const customTemplatePath = path.join(templateDir, `${template}.ejs`);
+      const templatePath = hasCustomTemplates && await fs.pathExists(customTemplatePath)
+        ? customTemplatePath
+        : path.join(__dirname, `themes/${theme}`, `${template}.ejs`);
+      
+      const templateFn = await getTemplate(templatePath);
+      const rendered = templateFn({
+        content: html,
+        metadata,
+        posts
+      });
+      
+      let outFile;
+      if (isIndex) {
+        outFile = path.join(outputDir, 'index.html');
+      } else if (isBlogPost) {
+        outFile = path.join(outputDir, 'blog', path.basename(file).replace('.md', '.html'));
+      } else {
+        outFile = path.join(outputDir, file.replace('.md', '.html'));
+      }
+      
+      await fs.outputFile(outFile, rendered);
+    }
+
+    // Then generate the blog index page
+    const customBlogTemplatePath = path.join(templateDir, 'blog.ejs');
+    const blogTemplatePath = hasCustomTemplates && await fs.pathExists(customBlogTemplatePath)
+      ? customBlogTemplatePath
+      : path.join(__dirname, `themes/${theme}`, 'blog.ejs');
     
-    const templateFn = await getTemplate(templatePath);
-    const rendered = templateFn({
-      content: html,
-      metadata,
-      posts
+    const blogTemplateFn = await getTemplate(blogTemplatePath);
+    const blogRendered = blogTemplateFn({
+      posts,
+      metadata: {
+        title: 'Blog',
+        description: 'All blog posts'
+      }
     });
     
-    let outFile;
-    if (isIndex) {
-      outFile = path.join(outputDir, 'index.html');
-    } else if (isBlogPost) {
-      outFile = path.join(outputDir, 'blog', path.basename(file).replace('.md', '.html'));
-    } else {
-      outFile = path.join(outputDir, file.replace('.md', '.html'));
-    }
-    
-    await fs.outputFile(outFile, rendered);
-    console.log(`✨ Generated: ${file} -> ${outFile}`);
+    await fs.outputFile(path.join(outputDir, 'blog.html'), blogRendered);
+
+    console.log('🎉 Site built successfully!');
+  } catch (error) {
+    console.error('Error generating site:', error);
+    throw error;
   }
-
-  // Then generate the blog index page
-  console.log('📚 Generating blog index...');
-  const customBlogTemplatePath = path.join(templateDir, 'blog.ejs');
-  const blogTemplatePath = hasCustomTemplates && await fs.pathExists(customBlogTemplatePath)
-    ? customBlogTemplatePath
-    : path.join(__dirname, `themes/${theme}`, 'blog.ejs');
-  
-  const blogTemplateFn = await getTemplate(blogTemplatePath);
-  const blogRendered = blogTemplateFn({
-    posts,
-    metadata: {
-      title: 'Blog',
-      description: 'All blog posts'
-    }
-  });
-  
-  await fs.outputFile(path.join(outputDir, 'blog.html'), blogRendered);
-  console.log('✨ Generated: blog.html');
-
-  console.log('🎉 Site built successfully!');
 }
 
 async function watch(inputDir, outputDir, options = {}) {
-  console.log('👀 Watching for changes...');
-  
-  // Initial build
-  await generate(inputDir, outputDir, options);
+  try {
+    console.log('👀 Watching for changes...');
+    
+    // Initial build
+    await generate(inputDir, outputDir, options);
 
-  // Watch markdown files
-  chokidar.watch('**/*.md', {
-    cwd: inputDir,
-    ignoreInitial: true
-  }).on('all', (event, file) => {
-    console.log(`📝 ${event}: ${file}`);
-    generate(inputDir, outputDir, options);
-  });
+    // Watch markdown files
+    chokidar.watch('**/*.md', {
+      cwd: inputDir,
+      ignoreInitial: true
+    }).on('all', (event, file) => {
+      console.log(`📝 ${event}: ${file}`);
+      generate(inputDir, outputDir, options);
+    });
 
-  // Watch template files and rebuild CSS
-  chokidar.watch(['**/*.ejs', '**/*.html'], {
-    cwd: inputDir,
-    ignoreInitial: true
-  }).on('all', async (event, file) => {
-    console.log(`🎨 ${event}: ${file}`);
-    await processCSS(outputDir);
-  });
+    // Watch template files and rebuild CSS
+    chokidar.watch(['**/*.ejs', '**/*.html'], {
+      cwd: inputDir,
+      ignoreInitial: true
+    }).on('all', async (event, file) => {
+      console.log(`🎨 ${event}: ${file}`);
+      await processCSS(outputDir);
+    });
+  } catch (error) {
+    console.error('Error in watch mode:', error);
+    throw error;
+  }
 }
 
 module.exports = { generate, watch };

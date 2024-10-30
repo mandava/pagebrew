@@ -12,16 +12,16 @@ program
   .option('-w, --watch', 'Watch for file changes')
   .option('-s, --serve', 'Serve output files on local server')
   .option('-t, --theme <theme>', 'Theme to use (default: default)')
-  .action((input, output, options) => {
+  .action(async (input, output, options) => {
     if (!input || !output) {
       program.help();
       return;
     }
 
     if (options.serve || options.watch) {
-      watch(input, output, options);
+      await watch(input, output, options);
     } else {
-      generate(input, output, options);
+      await generate(input, output, options);
     }
     
     if (options.serve) {
