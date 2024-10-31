@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        <%= metadata.title %> | <%= siteMetadata.name %>
+    </title>
+    <meta name="description" content="<%= metadata.description %>">
+    <link href="/css/style.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body class="min-h-screen bg-gradient-to-br from-aurora-light to-white font-space">
+    <%- include('partials/header.ejs') %>
+
+    <main class="pt-24 pb-16 px-4">
+        <div class="max-w-2xl mx-auto">
+            <article class="prose max-w-none mx-auto prose-img:rounded-lg">
+                <header class="mb-8 not-prose">
+                    <div class="space-y-3 md:space-y-4">
+                        <h1 class="text-3xl md:text-4xl font-medium text-aurora-dark"><%= metadata.title %></h1>
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm text-gray-600"><%= metadata.date.toLocaleDateString() %></span>
+                            <% if (metadata.tags && metadata.tags.length > 0) { %>
+                                <span class="text-xs md:text-sm font-medium text-aurora-blue"><%= metadata.tags[0] %></span>
+                            <% } %>
+                        </div>
+                    </div>
+                </header>
+                <%- content %>
+            </article>
+        </div>
+    </main>
+
+    <%- include('partials/footer.ejs') %>
+</body>
+
+</html>

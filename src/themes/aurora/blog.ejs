@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog | <%= siteMetadata.name %></title>
+    <link href="/css/style.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="min-h-screen bg-gradient-to-br from-aurora-light to-white font-space">
+    <%- include('partials/header.ejs') %>
+
+    <main class="pt-24 pb-16 px-4">
+        <div class="max-w-2xl mx-auto space-y-12">
+            <section class="text-center space-y-4 md:space-y-6">
+                <div class="space-y-3 md:space-y-4">
+                    <h1 class="text-3xl md:text-4xl font-medium text-aurora-dark">Blog Posts</h1>
+                </div>
+            </section>
+
+            <div class="grid gap-6 md:gap-8">
+                <% posts.forEach(post => { %>
+                    <article class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-start">
+                        <a href="<%= post.url %>">
+                            <img src="<%= post.image %>" alt="<%= post.title %>"
+                                 class="rounded-lg w-full md:col-span-1 aspect-video md:aspect-square object-cover"/>
+                        </a>
+                        <div class="md:col-span-2 space-y-2">
+                            <span class="text-xs md:text-sm font-medium text-aurora-blue"><%= post.tags[0] %></span>
+                            <h2 class="text-lg md:text-xl font-medium text-aurora-dark hover:underline">
+                                <a href="<%= post.url %>"><%= post.title %></a>
+                            </h2>
+                            <p class="text-sm md:text-base text-gray-600 line-clamp-2"><%= post.description %></p>
+                        </div>
+                    </article>
+                <% }); %>
+            </div>
+        </div>
+    </main>
+
+    <%- include('partials/footer.ejs') %>
+</body>
+</html>

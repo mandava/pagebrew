@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= metadata.title %> | <%= siteMetadata.name %></title>
+    <meta name="description" content="<%= metadata.description %>">
+    <link href="/css/style.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="min-h-screen bg-gradient-to-br from-aurora-light to-white font-space">
+    <%- include('partials/header.ejs') %>
+
+    <main class="pt-24 pb-16 px-4">
+        <div class="max-w-2xl mx-auto space-y-12">
+            <!-- Intro Section -->
+            <section class="text-center space-y-4 md:space-y-6">
+                <div class="space-y-3 md:space-y-4">
+                    <h1 class="text-3xl md:text-4xl font-medium text-aurora-dark"><%= metadata.title %></h1>
+                    <p class="text-sm md:text-base text-gray-600 max-w-lg mx-auto leading-relaxed"><%= metadata.description %></p>
+                </div>
+            </section>
+
+            <!-- Featured Post -->
+            <% if (posts && posts.length > 0) { %>
+                <article class="space-y-3 md:space-y-4">
+                    <a href="<%= posts[0].url %>">
+                        <img src="<%= posts[0].image %>" alt="<%= posts[0].title %>"
+                             class="rounded-xl object-cover w-full h-48 md:h-64"/>
+                    </a>
+                    <div class="space-y-2">
+                        <span class="text-xs md:text-sm text-aurora-green font-medium"><%= posts[0].tags[0] %></span>
+                        <h1 class="text-xl md:text-2xl font-medium text-aurora-dark hover:underline">
+                            <a href="<%= posts[0].url %>"><%= posts[0].title %></a>
+                        </h1>
+                        <p class="text-sm md:text-base text-gray-600 leading-relaxed"><%= posts[0].description %></p>
+                    </div>
+                </article>
+
+                <!-- Recent Posts -->
+                <div class="grid gap-6 md:gap-8">
+                    <% posts.slice(1, 3).forEach(post => { %>
+                        <article class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-start">
+                            <a href="<%= post.url %>">
+                                <img src="<%= post.image %>" alt="<%= post.title %>"
+                                     class="rounded-lg w-full md:col-span-1 aspect-video md:aspect-square object-cover"/>
+                            </a>
+                            <div class="md:col-span-2 space-y-2">
+                                <span class="text-xs md:text-sm font-medium text-aurora-blue"><%= post.tags[0] %></span>
+                                <h2 class="text-lg md:text-xl font-medium text-aurora-dark hover:underline">
+                                    <a href="<%= post.url %>"><%= post.title %></a>
+                                </h2>
+                                <p class="text-sm md:text-base text-gray-600 line-clamp-2"><%= post.description %></p>
+                            </div>
+                        </article>
+                    <% }); %>
+                </div>
+            <% } %>
+        </div>
+    </main>
+
+    <%- include('partials/footer.ejs') %>
+</body>
+</html>
