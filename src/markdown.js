@@ -12,8 +12,8 @@ function updateImagePaths(html) {
         return match;
       }
 
-      // Add /public prefix to the src path
-      const newSrc = `/public/${src}`;
+      const filename = src.split('/').pop();
+      const newSrc = `/public/${filename}`;
       return `<img${before}src="${newSrc}"${after}>`;
     }
   );
@@ -33,6 +33,13 @@ async function processMarkdown(content, options = {}) {
 
   html = updateImagePaths(html);
 
+  // Extract first image from HTML content
+  let image = '';
+  const imageMatch = html.match(/<img[^>]+src="([^">]+)"/);
+  if (imageMatch) {
+    image = imageMatch[1];
+  }
+
   return {
     html,
     metadata: {
@@ -40,7 +47,8 @@ async function processMarkdown(content, options = {}) {
       date: attributes.date ? new Date(attributes.date) : new Date(),
       title: attributes.title || 'Untitled',
       description: attributes.description || '',
-      tags: attributes.tags || []
+      tags: attributes.tags || [],
+      image
     }
   };
 }
