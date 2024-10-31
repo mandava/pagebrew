@@ -12,6 +12,7 @@ program
   .option('-w, --watch', 'Watch for file changes')
   .option('-s, --serve', 'Serve output files on local server')
   .option('-t, --theme <theme>', 'Theme to use (default: default)')
+  .option('-d, --debug', 'Enable debug logging')
   .action(async (input, output, options) => {
     if (!input || !output) {
       program.help();
@@ -23,10 +24,10 @@ program
     } else {
       await generate(input, output, options);
     }
-    
+
     if (options.serve) {
       createServer(output);
     }
   });
 
-program.parse(); 
+program.parse();

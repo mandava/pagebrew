@@ -1,5 +1,6 @@
 const { marked } = require('marked');
 const frontMatter = require('front-matter');
+const { debug } = require('./utils');
 
 function updateImagePaths(html) {
   // Replace image src paths to point to the public directory
@@ -18,8 +19,9 @@ function updateImagePaths(html) {
   );
 }
 
-async function processMarkdown(content) {
+async function processMarkdown(content, options = {}) {
   const { attributes, body } = frontMatter(content);
+  debug(`Processing markdown with attributes: ${JSON.stringify(attributes)}`, options);
 
   marked.use({
     gfm: true,

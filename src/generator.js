@@ -6,7 +6,7 @@ const tailwindcss = require('tailwindcss');
 const autoprefixer = require('autoprefixer');
 const chokidar = require('chokidar');
 const { processMarkdown } = require('./markdown');
-const { getTemplate } = require('./utils');
+const { getTemplate, debug } = require('./utils');
 
 const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp', 'bmp', 'tiff', 'ico', 'avif', 'jfif', 'pjpeg', 'pjp', 'apng', 'heif', 'heic'];
 
@@ -133,27 +133,27 @@ async function generate(inputDir, outputDir, options = {}) {
 
     const theme = options.theme || 'default';
 
-    console.log('🧹 Cleaning output directory...');
+    debug('🧹 Cleaning output directory...', options);
     await fs.emptyDir(outputDir);
 
-    console.log('📸 Copying images...');
+    debug('📸 Copying images...', options);
     await copyImages(inputDir, outputDir);
 
-    console.log(`🎨 Using theme: ${theme}`);
-    console.log('🍺 Brewing your site...');
+    debug(`🎨 Using theme: ${theme}`, options);
+    debug('🍺 Brewing your site...', options);
     await fs.ensureDir(path.join(outputDir, 'blog'));
 
     const templateDir = path.join(inputDir, 'templates');
     const hasCustomTemplates = await fs.pathExists(templateDir);
 
-    console.log('🎨 Processing styles...');
+    debug('🎨 Processing styles...', options);
     await processCSS(outputDir, theme);
 
     const files = await glob('**/*.md', { cwd: inputDir });
     const posts = await getAllPosts(inputDir);
     const pages = await getAllPages(inputDir);
     const siteMetadata = await getSiteMetadata(inputDir);
-    console.log('📝 Processing markdown files...');
+    debug('📝 Processing markdown files...', options);
 
     // First process all markdown files
     for (const file of files) {
@@ -220,7 +220,7 @@ async function generate(inputDir, outputDir, options = {}) {
       await fs.outputFile(path.join(outputDir, 'blog.html'), blogRendered);
     }
 
-    console.log('🎉 Site built successfully!');
+    console.log(`🎉 Site built successfully!`);
   } catch (error) {
     console.error('Error generating site:', error);
     throw error;
@@ -231,7 +231,7 @@ async function watch(inputDir, outputDir, options = {}) {
   const publicDir = path.join(outputDir, 'public');
 
   try {
-    console.log('👀 Watching for changes...');
+    debug('👀 Watching for changes...', options);
 
     // Initial build
     await generate(inputDir, outputDir, options);
@@ -243,7 +243,7 @@ async function watch(inputDir, outputDir, options = {}) {
         !path.endsWith('.md') &&
         !IMAGE_EXTENSIONS.some(ext => path.endsWith(`.${ext}`))
     }).on('all', async (event, file) => {
-      console.log(`📝 ${event}: ${file}`);
+      debug(`📝 ${event}: ${file}`, options);
 
       // If it's an image file, copy to public directory
       if (IMAGE_EXTENSIONS.some(ext => file.endsWith(`.${ext}`))) {
@@ -252,11 +252,11 @@ async function watch(inputDir, outputDir, options = {}) {
 
         if (event === 'unlink') {
           await fs.remove(targetPath);
-          console.log(`🗑️  Removed image: ${relativePath}`);
+          debug(`🗑️  Removed image: ${relativePath}`, options);
         } else {
           await fs.ensureDir(path.dirname(targetPath));
           await fs.copy(file, targetPath);
-          console.log(`📸 Updated image: ${relativePath}`);
+          debug(`📸 Updated image: ${relativePath}`, options);
         }
       } else {
         // Regenerate site for markdown changes
@@ -271,7 +271,7 @@ async function watch(inputDir, outputDir, options = {}) {
         !path.endsWith('.ejs') &&
         !path.endsWith('.html')
     }).on('all', async (event, file) => {
-      console.log(`🎨 ${event}: ${file}`);
+      debug(`🎨 ${event}: ${file}`, options);
       await processCSS(outputDir);
     });
   } catch (error) {
