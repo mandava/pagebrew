@@ -166,7 +166,7 @@ async function generate(inputDir, outputDir, options = {}) {
     // First process all markdown files
     for (const file of files) {
       const content = await fs.readFile(path.join(inputDir, file), 'utf-8');
-      const { html, metadata } = await processMarkdown(content);
+      const { html, metadata } = await processMarkdown(content, posts, options);
 
       const isIndex = file === 'index.md';
       const isBlogPost = file.startsWith('blog/');

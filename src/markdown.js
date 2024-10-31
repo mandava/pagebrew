@@ -19,7 +19,7 @@ function updateImagePaths(html) {
   );
 }
 
-async function processMarkdown(content, options = {}) {
+async function processMarkdown(content, posts = [], options = {}) {
   const { attributes, body } = frontMatter(content);
   debug(`Processing markdown with attributes: ${JSON.stringify(attributes)}`, options);
 
@@ -40,6 +40,25 @@ async function processMarkdown(content, options = {}) {
     image = imageMatch[1];
   }
 
+  // Find current post index if posts array is provided
+  let nextPost = null;
+  let previousPost = null;
+
+  if (posts.length > 0 && attributes.date) {
+    const currentDate = new Date(attributes.date);
+    const sortedPosts = posts.sort((a, b) => new Date(b.date) - new Date(a.date));
+    const currentIndex = sortedPosts.findIndex(post =>
+      new Date(post.date).getTime() === currentDate.getTime()
+    );
+
+    if (currentIndex > 0) {
+      nextPost = sortedPosts[currentIndex - 1];
+    }
+    if (currentIndex < sortedPosts.length - 1) {
+      previousPost = sortedPosts[currentIndex + 1];
+    }
+  }
+
   return {
     html,
     metadata: {
@@ -48,7 +67,9 @@ async function processMarkdown(content, options = {}) {
       title: attributes.title || 'Untitled',
       description: attributes.description || '',
       tags: attributes.tags || [],
-      image
+      image,
+      nextPost,
+      previousPost
     }
   };
 }
