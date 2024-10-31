@@ -14,10 +14,19 @@ async function processCSS(outputDir, theme = 'default') {
   const defaultCssPath = path.join(__dirname, `themes/${theme}/css/style.css`);
   const cssContent = await fs.readFile(defaultCssPath, 'utf-8');
 
-  const configPath = path.join(process.cwd(), 'tailwind.config.js');
-  const tailwindConfig = await fs.pathExists(configPath)
-    ? require(configPath)
-    : require('./tailwind.config.js');
+  // Look for theme-specific tailwind config first
+  const themeConfigPath = path.join(__dirname, `themes/${theme}/tailwind.config.js`);
+  const projectConfigPath = path.join(process.cwd(), 'tailwind.config.js');
+
+  let tailwindConfig;
+
+  if (await fs.pathExists(themeConfigPath)) {
+    tailwindConfig = require(themeConfigPath);
+  } else if (await fs.pathExists(projectConfigPath)) {
+    tailwindConfig = require(projectConfigPath);
+  } else {
+    tailwindConfig = require('./tailwind.config.js');
+  }
 
   tailwindConfig.content = [
     path.join(outputDir, '**/*.html'),
@@ -43,6 +52,7 @@ async function getAllPosts(inputDir) {
     if (file === 'blog/index.md') continue;
     const content = await fs.readFile(path.join(inputDir, file), 'utf-8');
     const { metadata } = await processMarkdown(content);
+
     posts.push({
       ...metadata,
       url: '/blog/' + path.basename(file).replace('.md', '.html')
@@ -93,7 +103,8 @@ async function copyImages(inputDir, outputDir) {
 
   for (const file of imageFiles) {
     const sourcePath = path.join(inputDir, file);
-    const targetPath = path.join(publicDir, file);
+    const filename = path.basename(file);
+    const targetPath = path.join(publicDir, filename);
 
     await fs.copy(sourcePath, targetPath);
   }
@@ -145,9 +156,6 @@ async function generate(inputDir, outputDir, options = {}) {
 
     const templateDir = path.join(inputDir, 'templates');
     const hasCustomTemplates = await fs.pathExists(templateDir);
-
-    debug('🎨 Processing styles...', options);
-    await processCSS(outputDir, theme);
 
     const files = await glob('**/*.md', { cwd: inputDir });
     const posts = await getAllPosts(inputDir);
@@ -219,6 +227,10 @@ async function generate(inputDir, outputDir, options = {}) {
 
       await fs.outputFile(path.join(outputDir, 'blog.html'), blogRendered);
     }
+
+
+    debug('🎨 Processing styles...', options);
+    await processCSS(outputDir, theme);
 
     console.log(`🎉 Site built successfully!`);
   } catch (error) {
