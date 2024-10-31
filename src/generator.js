@@ -8,6 +8,8 @@ const chokidar = require('chokidar');
 const { processMarkdown } = require('./markdown');
 const { getTemplate } = require('./utils');
 
+const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp', 'bmp', 'tiff', 'ico', 'avif', 'jfif', 'pjpeg', 'pjp', 'apng', 'heif', 'heic'];
+
 async function processCSS(outputDir, theme = 'default') {
   const defaultCssPath = path.join(__dirname, `themes/${theme}/css/style.css`);
   const cssContent = await fs.readFile(defaultCssPath, 'utf-8');
@@ -83,6 +85,20 @@ async function getAllPages(inputDir) {
   return pages;
 }
 
+async function copyImages(inputDir, outputDir) {
+  const publicDir = path.join(outputDir, 'public');
+  const imagePattern = `**/*.{${IMAGE_EXTENSIONS.join(',')}}`;
+
+  const imageFiles = await glob(imagePattern, { cwd: inputDir });
+
+  for (const file of imageFiles) {
+    const sourcePath = path.join(inputDir, file);
+    const targetPath = path.join(publicDir, file);
+
+    await fs.copy(sourcePath, targetPath);
+  }
+}
+
 async function generate(inputDir, outputDir, options = {}) {
   try {
     if (!await fs.pathExists(inputDir)) {
@@ -99,6 +115,9 @@ async function generate(inputDir, outputDir, options = {}) {
 
     console.log('🧹 Cleaning output directory...');
     await fs.emptyDir(outputDir);
+
+    console.log('📸 Copying images...');
+    await copyImages(inputDir, outputDir);
 
     console.log(`🎨 Using theme: ${theme}`);
     console.log('🍺 Brewing your site...');
@@ -186,23 +205,42 @@ async function generate(inputDir, outputDir, options = {}) {
 }
 
 async function watch(inputDir, outputDir, options = {}) {
+  const publicDir = path.join(outputDir, 'public');
+
   try {
     console.log('👀 Watching for changes...');
 
     // Initial build
     await generate(inputDir, outputDir, options);
 
-    // Watch all files but filter for markdown
     chokidar.watch(inputDir, {
       ignoreInitial: true,
       ignored: (path, stats) =>
-        stats?.isFile() && !path.endsWith('.md')
-    }).on('all', (event, file) => {
+        stats?.isFile() &&
+        !path.endsWith('.md') &&
+        !IMAGE_EXTENSIONS.some(ext => path.endsWith(`.${ext}`))
+    }).on('all', async (event, file) => {
       console.log(`📝 ${event}: ${file}`);
-      generate(inputDir, outputDir, options);
+
+      // If it's an image file, copy to public directory
+      if (IMAGE_EXTENSIONS.some(ext => file.endsWith(`.${ext}`))) {
+        const relativePath = path.relative(inputDir, file);
+        const targetPath = path.join(publicDir, relativePath);
+
+        if (event === 'unlink') {
+          await fs.remove(targetPath);
+          console.log(`🗑️  Removed image: ${relativePath}`);
+        } else {
+          await fs.ensureDir(path.dirname(targetPath));
+          await fs.copy(file, targetPath);
+          console.log(`📸 Updated image: ${relativePath}`);
+        }
+      } else {
+        // Regenerate site for markdown changes
+        await generate(inputDir, outputDir, options);
+      }
     });
 
-    // Watch all files but filter for templates
     chokidar.watch(inputDir, {
       ignoreInitial: true,
       ignored: (path, stats) =>

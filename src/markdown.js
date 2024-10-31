@@ -1,17 +1,36 @@
 const { marked } = require('marked');
 const frontMatter = require('front-matter');
 
+function updateImagePaths(html) {
+  // Replace image src paths to point to the public directory
+  return html.replace(
+    /<img([^>]*?)src="([^"]*?)"([^>]*?)>/g,
+    (match, before, src, after) => {
+      // Don't modify absolute URLs or URLs that already start with /public
+      if (src.startsWith('http') || src.startsWith('/public')) {
+        return match;
+      }
+
+      // Add /public prefix to the src path
+      const newSrc = `/public/${src}`;
+      return `<img${before}src="${newSrc}"${after}>`;
+    }
+  );
+}
+
 async function processMarkdown(content) {
   const { attributes, body } = frontMatter(content);
-  
+
   marked.use({
     gfm: true,
     breaks: true,
     headerIds: true
   });
 
-  const html = marked.parse(body);
-  
+  let html = marked.parse(body);
+
+  html = updateImagePaths(html);
+
   return {
     html,
     metadata: {
@@ -24,4 +43,4 @@ async function processMarkdown(content) {
   };
 }
 
-module.exports = { processMarkdown }; 
+module.exports = { processMarkdown };
