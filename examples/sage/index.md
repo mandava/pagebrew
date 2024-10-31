@@ -1,4 +1,5 @@
 ---
+name: Sage Blog
 title: Welcome to My Blog
 description: A blog built with Pagebrew
 ---

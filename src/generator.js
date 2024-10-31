@@ -99,6 +99,26 @@ async function copyImages(inputDir, outputDir) {
   }
 }
 
+async function getSiteMetadata(inputDir) {
+  const indexPath = path.join(inputDir, 'index.md');
+  // Remove trailing slashes, split on dashes,   capitalize first letter
+  let inputDirName = path.basename(inputDir).replace(/\/+$/, '').split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+
+  let siteMetadata = {
+    name: inputDirName,
+    tagline: ''
+  };
+
+  if (await fs.pathExists(indexPath)) {
+    const content = await fs.readFile(indexPath, 'utf-8');
+    const { metadata } = await processMarkdown(content);
+    if (metadata.name) siteMetadata.name = metadata.name;
+    if (metadata.tagline) siteMetadata.tagline = metadata.tagline;
+  }
+
+  return siteMetadata;
+}
+
 async function generate(inputDir, outputDir, options = {}) {
   try {
     if (!await fs.pathExists(inputDir)) {
@@ -132,6 +152,7 @@ async function generate(inputDir, outputDir, options = {}) {
     const files = await glob('**/*.md', { cwd: inputDir });
     const posts = await getAllPosts(inputDir);
     const pages = await getAllPages(inputDir);
+    const siteMetadata = await getSiteMetadata(inputDir);
     console.log('📝 Processing markdown files...');
 
     // First process all markdown files
@@ -159,7 +180,8 @@ async function generate(inputDir, outputDir, options = {}) {
         metadata,
         posts,
         pages,
-        currentPage
+        currentPage,
+        siteMetadata
       });
 
       let outFile;
@@ -191,7 +213,8 @@ async function generate(inputDir, outputDir, options = {}) {
         metadata: {
           title: 'Blog',
           description: 'All blog posts'
-        }
+        },
+        siteMetadata
       });
 
       await fs.outputFile(path.join(outputDir, 'blog.html'), blogRendered);
