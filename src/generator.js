@@ -85,6 +85,16 @@ async function getAllPages(inputDir) {
 
 async function generate(inputDir, outputDir, options = {}) {
   try {
+    if (!await fs.pathExists(inputDir)) {
+      console.warn(`Input directory "${inputDir}" does not exist`);
+      process.exit(1);
+    }
+
+    const mdFiles = await glob('**/*.md', { cwd: inputDir });
+    if (mdFiles.length === 0) {
+      console.warn('⚠️  Warning: No markdown files found in input directory');
+    }
+
     const theme = options.theme || 'default';
 
     console.log('🧹 Cleaning output directory...');
@@ -147,22 +157,26 @@ async function generate(inputDir, outputDir, options = {}) {
 
     // Then generate the blog index page
     const customBlogTemplatePath = path.join(templateDir, 'blog.ejs');
-    const blogTemplatePath = hasCustomTemplates && await fs.pathExists(customBlogTemplatePath)
-      ? customBlogTemplatePath
-      : path.join(__dirname, `themes/${theme}`, 'blog.ejs');
+    const defaultBlogTemplatePath = path.join(__dirname, `themes/${theme}`, 'blog.ejs');
 
-    const blogTemplateFn = await getTemplate(blogTemplatePath);
-    const blogRendered = blogTemplateFn({
-      posts,
-      pages,
-      currentPage: '/blog.html',
-      metadata: {
-        title: 'Blog',
-        description: 'All blog posts'
-      }
-    });
+    if (await fs.pathExists(customBlogTemplatePath) || await fs.pathExists(defaultBlogTemplatePath)) {
+      const blogTemplatePath = hasCustomTemplates && await fs.pathExists(customBlogTemplatePath)
+        ? customBlogTemplatePath
+        : defaultBlogTemplatePath;
 
-    await fs.outputFile(path.join(outputDir, 'blog.html'), blogRendered);
+      const blogTemplateFn = await getTemplate(blogTemplatePath);
+      const blogRendered = blogTemplateFn({
+        posts,
+        pages,
+        currentPage: '/blog.html',
+        metadata: {
+          title: 'Blog',
+          description: 'All blog posts'
+        }
+      });
+
+      await fs.outputFile(path.join(outputDir, 'blog.html'), blogRendered);
+    }
 
     console.log('🎉 Site built successfully!');
   } catch (error) {
@@ -178,19 +192,23 @@ async function watch(inputDir, outputDir, options = {}) {
     // Initial build
     await generate(inputDir, outputDir, options);
 
-    // Watch markdown files
-    chokidar.watch('**/*.md', {
-      cwd: inputDir,
-      ignoreInitial: true
+    // Watch all files but filter for markdown
+    chokidar.watch(inputDir, {
+      ignoreInitial: true,
+      ignored: (path, stats) =>
+        stats?.isFile() && !path.endsWith('.md')
     }).on('all', (event, file) => {
       console.log(`📝 ${event}: ${file}`);
       generate(inputDir, outputDir, options);
     });
 
-    // Watch template files and rebuild CSS
-    chokidar.watch(['**/*.ejs', '**/*.html'], {
-      cwd: inputDir,
-      ignoreInitial: true
+    // Watch all files but filter for templates
+    chokidar.watch(inputDir, {
+      ignoreInitial: true,
+      ignored: (path, stats) =>
+        stats?.isFile() &&
+        !path.endsWith('.ejs') &&
+        !path.endsWith('.html')
     }).on('all', async (event, file) => {
       console.log(`🎨 ${event}: ${file}`);
       await processCSS(outputDir);
