@@ -10,7 +10,7 @@ const { getTemplate, debug } = require('./utils');
 
 const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp', 'bmp', 'tiff', 'ico', 'avif', 'jfif', 'pjpeg', 'pjp', 'apng', 'heif', 'heic'];
 
-async function processCSS(outputDir, theme = 'default') {
+async function processCSS(outputDir, theme) {
   const defaultCssPath = path.join(__dirname, `themes/${theme}/css/style.css`);
   const cssContent = await fs.readFile(defaultCssPath, 'utf-8');
 
@@ -157,7 +157,7 @@ async function generate(inputDir, outputDir, options = {}) {
       console.warn('⚠️  Warning: No markdown files found in input directory');
     }
 
-    const theme = options.theme || 'default';
+    const theme = options.theme || 'minimal';
 
     debug('🧹 Cleaning output directory...', options);
     await fs.emptyDir(outputDir);
