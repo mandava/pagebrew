@@ -1,0 +1,17 @@
+<header>
+    <nav class="border-b border-rose-overlay/50">
+        <div class="max-w-2xl mx-auto px-6 py-8 flex justify-between items-center">
+            <a href="/" class="text-3xl font-light tracking-tight font-medium">
+                <%= siteMetadata.name %>
+            </a>
+            <div class="flex items-center gap-6">
+                <% pages.forEach(function(page) { %>
+                    <a href="<%= page.url %>"
+                       class="<%= currentPage === page.url ? 'text-rose-love' : 'text-rose-muted hover:text-rose-text' %>">
+                        <%= page.title %>
+                    </a>
+                <% }); %>
+            </div>
+        </div>
+    </nav>
+</header>
