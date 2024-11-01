@@ -71,6 +71,7 @@ async function getAllPages(inputDir) {
 
   for (const file of files) {
     if (file === 'index.md') continue;
+    if (file === 'footer.md') continue;
     if (file.startsWith('blog/')) {
       // Only add the blog index page once
       if (!pages.find(p => p.url === '/blog.html')) {
@@ -130,6 +131,20 @@ async function getSiteMetadata(inputDir) {
   return siteMetadata;
 }
 
+async function getFooterContent(inputDir, siteMetadata) {
+  const footerPath = path.join(inputDir, 'footer.md');
+
+  if (await fs.pathExists(footerPath)) {
+    const content = await fs.readFile(footerPath, 'utf-8');
+    const { html } = await processMarkdown(content);
+    return html;
+  }
+
+  let currentYear = new Date().getFullYear();
+
+  return `Built with <a href="https://github.com/mandava/pagebrew" class="underline">Pagebrew</a> | © ${currentYear} ${siteMetadata.name}`;
+}
+
 async function generate(inputDir, outputDir, options = {}) {
   try {
     if (!await fs.pathExists(inputDir)) {
@@ -161,10 +176,13 @@ async function generate(inputDir, outputDir, options = {}) {
     const posts = await getAllPosts(inputDir);
     const pages = await getAllPages(inputDir);
     const siteMetadata = await getSiteMetadata(inputDir);
+    const footerContent = await getFooterContent(inputDir, siteMetadata);
     debug('📝 Processing markdown files...', options);
 
     // First process all markdown files
     for (const file of files) {
+      if (file === 'footer.md') continue;
+
       const content = await fs.readFile(path.join(inputDir, file), 'utf-8');
       const { html, metadata } = await processMarkdown(content, posts, options);
 
@@ -189,7 +207,8 @@ async function generate(inputDir, outputDir, options = {}) {
         posts,
         pages,
         currentPage,
-        siteMetadata
+        siteMetadata,
+        footerContent
       });
 
       let outFile;
@@ -222,7 +241,8 @@ async function generate(inputDir, outputDir, options = {}) {
           title: 'Blog',
           description: 'All blog posts'
         },
-        siteMetadata
+        siteMetadata,
+        footerContent
       });
 
       await fs.outputFile(path.join(outputDir, 'blog.html'), blogRendered);
