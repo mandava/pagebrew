@@ -21,10 +21,12 @@
             <div class="grid gap-6 md:gap-8">
                 <% posts.forEach(post => { %>
                     <article class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-start">
-                        <a href="<%= post.url %>">
-                            <img src="<%= post.image %>" alt="<%= post.title %>"
-                                 class="rounded-lg w-full md:col-span-1 aspect-video md:aspect-square object-cover"/>
-                        </a>
+                        <% if (post.image) { %>
+                            <a href="<%= post.url %>">
+                                <img src="<%= post.image %>" alt="<%= post.title %>"
+                                     class="rounded-lg w-full md:col-span-1 aspect-video md:aspect-square object-cover"/>
+                            </a>
+                        <% } %>
                         <div class="md:col-span-2 space-y-2">
                             <span class="text-xs md:text-sm font-medium text-aurora-blue"><%= post.tags[0] %></span>
                             <h2 class="text-lg md:text-xl font-medium text-aurora-dark hover:underline">

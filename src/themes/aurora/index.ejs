@@ -24,10 +24,12 @@
             <!-- Featured Post -->
             <% if (posts && posts.length > 0) { %>
                 <article class="space-y-3 md:space-y-4">
+                    <% if (posts[0].image) { %>
                     <a href="<%= posts[0].url %>">
                         <img src="<%= posts[0].image %>" alt="<%= posts[0].title %>"
                              class="rounded-xl object-cover w-full h-48 md:h-64"/>
-                    </a>
+                        </a>
+                    <% } %>
                     <div class="space-y-2">
                         <span class="text-xs md:text-sm text-aurora-green font-medium"><%= posts[0].tags[0] %></span>
                         <h1 class="text-xl md:text-2xl font-medium text-aurora-dark hover:underline">
@@ -41,10 +43,12 @@
                 <div class="grid gap-6 md:gap-8">
                     <% posts.slice(1, 3).forEach(post => { %>
                         <article class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-start">
+                            <% if (post.image) { %>
                             <a href="<%= post.url %>">
                                 <img src="<%= post.image %>" alt="<%= post.title %>"
                                      class="rounded-lg w-full md:col-span-1 aspect-video md:aspect-square object-cover"/>
-                            </a>
+                                </a>
+                            <% } %>
                             <div class="md:col-span-2 space-y-2">
                                 <span class="text-xs md:text-sm font-medium text-aurora-blue"><%= post.tags[0] %></span>
                                 <h2 class="text-lg md:text-xl font-medium text-aurora-dark hover:underline">
