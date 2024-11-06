@@ -44,7 +44,21 @@ async function processCSS() {
   const theme = await getTheme();
   const outputDir = await getOutputDir();
   const defaultCssPath = path.join(__dirname, `themes/${theme}/css/style.css`);
-  const cssContent = await fs.readFile(defaultCssPath, 'utf-8');
+
+  let cssContent;
+  if (await fs.pathExists(defaultCssPath)) {
+    cssContent = await fs.readFile(defaultCssPath, 'utf-8');
+  } else {
+    let templateCssPath = path.join(__dirname, 'templates/css/style.css');
+    if (await fs.pathExists(templateCssPath)) {
+      cssContent = await fs.readFile(templateCssPath, 'utf-8');
+    }
+  }
+
+  if (!cssContent) {
+    console.error(`⚠️  Error: No CSS found`);
+    process.exit(1);
+  }
 
   // Look for theme-specific tailwind config first
   const themeConfigPath = path.join(__dirname, `themes/${theme}/tailwind.config.js`);
@@ -62,7 +76,8 @@ async function processCSS() {
 
   tailwindConfig.content = [
     path.join(outputDir, '**/*.html'),
-    path.join(__dirname, `themes/${theme}/**/*.ejs`)
+    path.join(__dirname, `themes/${theme}/**/*.ejs`),
+    path.join(__dirname, 'templates/**/*.ejs')
   ];
 
   const result = await postcss([
@@ -215,7 +230,6 @@ async function generate(options = {}) {
     const theme = await getTheme();
 
     await fs.emptyDir(outputDir);
-    await fs.ensureDir(path.join(outputDir, 'blog'));
 
     const templateDir = path.join(inputDir, 'templates');
     const hasCustomTemplates = await fs.pathExists(templateDir);

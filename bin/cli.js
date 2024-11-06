@@ -4,10 +4,12 @@ const { program } = require('commander');
 const { watch, build } = require('../src/generator');
 const { createServer } = require('../src/server');
 const { updateConfig } = require('../src/config');
+const { version } = require('../package.json');
 
 program
   .name('pagebrew')
-  .description('Create a static site from your markdown files');
+  .description('Create a static site from your markdown files')
+  .version(version);
 
 // Serve command - development server
 program

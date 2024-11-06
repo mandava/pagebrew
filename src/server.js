@@ -14,7 +14,6 @@ async function createServer(port = 3000) {
     // Get file extension
     const ext = path.extname(filePath);
 
-
     // Basic MIME type mapping
     const contentTypes = {
       '.html': 'text/html',
@@ -41,10 +40,25 @@ async function createServer(port = 3000) {
     });
   });
 
-  server.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
-  });
+  const startServer = (portToUse) => {
+    // Remove any existing listeners before adding new ones
+    server.removeAllListeners('error');
+    server.removeAllListeners('listening');
 
+    server.listen(portToUse)
+      .on('error', (err) => {
+        let newPort = Number(portToUse) + 1;
+        if (err.code === 'EADDRINUSE') {
+          console.log(`Port ${portToUse} is busy, trying ${newPort}...`);
+          startServer(newPort);
+        }
+      })
+      .once('listening', () => {
+        console.log(`Server running at http://localhost:${portToUse}`);
+      });
+  };
+
+  startServer(port);
   return server;
 }
 

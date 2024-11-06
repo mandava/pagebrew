@@ -1,6 +1,11 @@
 
 # Changelog
 
+## 1.2.0
+
+- Update server to handle port conflicts
+- Fix CSS when using custom templates
+- Get version using `pagebrew --version` or `pagebrew -V`
 
 ## 1.1.0
 
