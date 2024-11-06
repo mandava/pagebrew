@@ -1,7 +1,7 @@
 {
   "name": "Aurora Demo",
   "description": "Welcome to Aurora Demo",
-  "theme": "aur",
+  "theme": "aurora",
   "outputDir": "dist",
   "menu": [
     {
