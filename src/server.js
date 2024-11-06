@@ -1,15 +1,20 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const { getConfig } = require('./config');
 
-function createServer(outputDir, port = 3000) {
-  const server = http.createServer((req, res) => {
+async function createServer(port = 3000) {
+  const server = http.createServer(async (req, res) => {
+    const config = await getConfig();
+    const outputDir = config.outputDir || 'dist';
+
     // Convert URL to filesystem path, default to index.html
     let filePath = path.join(outputDir, req.url === '/' ? 'index.html' : req.url);
-    
+
     // Get file extension
     const ext = path.extname(filePath);
-    
+
+
     // Basic MIME type mapping
     const contentTypes = {
       '.html': 'text/html',
@@ -43,4 +48,4 @@ function createServer(outputDir, port = 3000) {
   return server;
 }
 
-module.exports = { createServer }; 
+module.exports = { createServer };

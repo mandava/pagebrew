@@ -1,0 +1,9 @@
+{
+  "name": "Frappe Demo",
+  "description": "Welcome to Frappe Demo",
+  "theme": "frappe",
+  "outputDir": "dist",
+  "menu": [
+
+  ]
+}

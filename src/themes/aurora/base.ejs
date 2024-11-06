@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= metadata.title %> | <%= siteMetadata.name %></title>
-    <meta name="description" content="<%= metadata.description %>">
+    <title><%= page.title %> | <%= siteMetadata.name %></title>
+    <meta name="description" content="<%= page.description %>">
     <link href="/css/style.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -14,7 +14,7 @@
     <main class="pt-24 pb-16 px-4">
         <div class="max-w-2xl mx-auto">
             <article class="prose max-w-none mx-auto">
-                <%- content %>
+                <%- page.content %>
             </article>
         </div>
     </main>

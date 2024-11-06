@@ -7,10 +7,10 @@
                 </a>
             </div>
             <div class="flex items-center gap-4">
-                <% pages.forEach(function(page) { %>
-                    <a href="<%= page.url %>"
-                    class="<%= currentPage === page.url ? 'font-bold text-aurora-dark' : 'text-gray-500' %>">
-                        <%= page.title %>
+                <% menu.forEach(function(menuItem) { %>
+                    <a href="<%= menuItem.url %>"
+                    class="<%= currentPage === menuItem.url ? 'font-bold text-aurora-dark' : 'text-gray-500' %>">
+                        <%= menuItem.title %>
                     </a>
                 <% }); %>
             </div>

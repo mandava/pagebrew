@@ -1,7 +1,7 @@
 {
   "name": "pagebrew",
-  "version": "1.0.0",
-  "description": "Zero-config static site generator for your markdown files",
+  "version": "1.1.0",
+  "description": "Pagebrew is a CLI tool for creating static sites from markdown files",
   "main": "index.js",
   "bin": {
     "pagebrew": "./bin/cli.js"
@@ -16,7 +16,6 @@
     "tailwind",
     "ejs",
     "pagebrew",
-    "zero-config",
     "static-site",
     "blog",
     "markdown-to-html"

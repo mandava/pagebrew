@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= metadata.title %> | <%= siteMetadata.name %></title>
-    <meta name="description" content="<%= metadata.description %>">
+    <title><%= page.title %> | <%= siteMetadata.name %></title>
+    <meta name="description" content="<%= page.description %>">
     <link href="/css/style.css" rel="stylesheet">
 </head>
 <body class="bg-white text-gray-900">
@@ -12,7 +12,7 @@
 
     <main class="mx-auto px-4 py-8 max-w-screen-md">
         <article class="prose max-w-none mx-auto">
-            <%- content %>
+            <%- page.content %>
         </article>
     </main>
 

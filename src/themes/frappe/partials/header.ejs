@@ -5,10 +5,10 @@
                 <%= siteMetadata.name %>
             </a>
             <div class="flex items-center gap-6">
-                <% pages.forEach(function(page) { %>
-                    <a href="<%= page.url %>"
-                       class="<%= currentPage === page.url ? 'text-rose-love' : 'text-rose-muted hover:text-rose-text' %>">
-                        <%= page.title %>
+                <% menu.forEach(function(menuItem) { %>
+                    <a href="<%= menuItem.url %>"
+                       class="<%= currentPage === menuItem.url ? 'text-rose-love' : 'text-rose-muted hover:text-rose-text' %>">
+                        <%= menuItem.title %>
                     </a>
                 <% }); %>
             </div>

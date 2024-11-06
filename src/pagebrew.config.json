@@ -1,0 +1,6 @@
+{
+    "name": "Pagebrew",
+    "description": "Pagebrew is a CLI tool for creating static sites from markdown files",
+    "theme": "minimal",
+    "outputDir": "dist"
+}

@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= metadata.title %> | <%= siteMetadata.name %></title>
-    <meta name="description" content="<%= metadata.description %>">
+    <title><%= page.title %> | <%= siteMetadata.name %></title>
+    <meta name="description" content="<%= page.description %>">
     <link href="/css/style.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -16,17 +16,17 @@
             <!-- Intro Section -->
             <section class="text-center space-y-4 md:space-y-6">
                 <div class="space-y-3 md:space-y-4">
-                    <h1 class="text-3xl md:text-4xl font-medium text-aurora-dark"><%= metadata.title %></h1>
-                    <p class="text-sm md:text-base text-gray-600 max-w-lg mx-auto leading-relaxed"><%= metadata.description %></p>
+                    <h1 class="text-3xl md:text-4xl font-medium text-aurora-dark"><%= page.title %></h1>
+                    <p class="text-sm md:text-base text-gray-600 max-w-lg mx-auto leading-relaxed"><%= page.description %></p>
                 </div>
             </section>
 
             <!-- Featured Post -->
             <% if (posts && posts.length > 0) { %>
                 <article class="space-y-3 md:space-y-4">
-                    <% if (posts[0].image) { %>
+                    <% if (posts[0].thumbnail) { %>
                     <a href="<%= posts[0].url %>">
-                        <img src="<%= posts[0].image %>" alt="<%= posts[0].title %>"
+                        <img src="<%= posts[0].thumbnail %>" alt="<%= posts[0].title %>"
                              class="rounded-xl object-cover w-full h-48 md:h-64"/>
                         </a>
                     <% } %>
@@ -43,9 +43,9 @@
                 <div class="grid gap-6 md:gap-8">
                     <% posts.slice(1, 3).forEach(post => { %>
                         <article class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-start">
-                            <% if (post.image) { %>
+                            <% if (post.thumbnail) { %>
                             <a href="<%= post.url %>">
-                                <img src="<%= post.image %>" alt="<%= post.title %>"
+                                <img src="<%= post.thumbnail %>" alt="<%= post.title %>"
                                      class="rounded-lg w-full md:col-span-1 aspect-video md:aspect-square object-cover"/>
                                 </a>
                             <% } %>

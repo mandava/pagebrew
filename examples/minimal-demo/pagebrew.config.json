@@ -1,0 +1,20 @@
+{
+  "name": "Minimal Demo",
+  "description": "Welcome to Minimal Demo",
+  "theme": "minimal",
+  "outputDir": "dist",
+  "menu": [
+    {
+      "title": "Home",
+      "url": "/"
+    },
+    {
+      "title": "About",
+      "url": "/about.html"
+    },
+    {
+      "title": "Blog",
+      "url": "/blog.html"
+    }
+  ]
+}

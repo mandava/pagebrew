@@ -1,0 +1,16 @@
+{
+  "name": "Aurora Demo",
+  "description": "Welcome to Aurora Demo",
+  "theme": "aur",
+  "outputDir": "dist",
+  "menu": [
+    {
+      "title": "Home",
+      "url": "/"
+    },
+    {
+      "title": "Blog",
+      "url": "/blog.html"
+    }
+  ]
+}

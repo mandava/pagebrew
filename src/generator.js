@@ -7,10 +7,42 @@ const autoprefixer = require('autoprefixer');
 const chokidar = require('chokidar');
 const { processMarkdown } = require('./markdown');
 const { getTemplate, debug } = require('./utils');
+const { getConfig, updateConfig } = require('./config');
+
+const inputDir = process.cwd();
 
 const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp', 'bmp', 'tiff', 'ico', 'avif', 'jfif', 'pjpeg', 'pjp', 'apng', 'heif', 'heic'];
 
-async function processCSS(outputDir, theme) {
+async function getOutputDir() {
+  const config = await getConfig();
+  return path.relative(process.cwd(), config.outputDir || 'dist');
+}
+
+async function getTheme() {
+  const config = await getConfig();
+  return config.theme || 'minimal';
+}
+
+async function createNavMenu() {
+  const pages = await getAllPages();
+  const menu = pages.map(page => {
+    if (page.url === '/index.html') {
+      return {
+        title: 'Home',
+        url: '/'
+      };
+    }
+    return {
+      title: page.title,
+      url: page.url
+    };
+  });
+  return menu;
+}
+
+async function processCSS() {
+  const theme = await getTheme();
+  const outputDir = await getOutputDir();
   const defaultCssPath = path.join(__dirname, `themes/${theme}/css/style.css`);
   const cssContent = await fs.readFile(defaultCssPath, 'utf-8');
 
@@ -44,63 +76,101 @@ async function processCSS(outputDir, theme) {
   await fs.outputFile(path.join(outputDir, 'css/style.css'), result.css);
 }
 
-async function getAllPosts(inputDir) {
-  const files = await glob('blog/**/*.md', { cwd: inputDir });
+async function getAllPosts() {
+  const inputDir = process.cwd();
+  const postFiles = await glob('blog/**/*.md', { cwd: inputDir });
   const posts = [];
 
-  for (const file of files) {
-    if (file === 'blog/index.md') continue;
-    const content = await fs.readFile(path.join(inputDir, file), 'utf-8');
-    const { metadata } = await processMarkdown(content);
+  if (postFiles.length === 0) {
+    return posts;
+  }
+
+  for (const postFile of postFiles) {
+    const content = await fs.readFile(path.join(inputDir, postFile), 'utf-8');
+    const { html, metadata } = await processMarkdown(content);
 
     posts.push({
       ...metadata,
-      url: '/blog/' + path.basename(file).replace('.md', '.html')
+      url: '/blog/' + path.basename(postFile).replace('.md', '.html'),
+      content: html
     });
   }
 
-  return posts.sort((a, b) => b.date - a.date);
+  // Sort posts by date descending
+  const sortedPosts = posts.sort((a, b) => b.date - a.date);
+
+  // Add next/previous links
+  for (let i = 0; i < sortedPosts.length; i++) {
+    if (i > 0) {
+      sortedPosts[i].nextPost = {
+        title: sortedPosts[i - 1].title,
+        url: sortedPosts[i - 1].url
+      };
+    }
+    if (i < sortedPosts.length - 1) {
+      sortedPosts[i].previousPost = {
+        title: sortedPosts[i + 1].title,
+        url: sortedPosts[i + 1].url
+      };
+    }
+  }
+
+  return sortedPosts;
 }
 
-async function getAllPages(inputDir) {
-  let pages = [
-    { url: '/', title: 'Home' }
-  ];
+async function getAllPages() {
+  const inputDir = process.cwd();
+  let pages = [];
 
-  const files = await glob('**/*.md', { cwd: inputDir });
+  const allFiles = await glob('**/*.md', { cwd: inputDir });
+  const pageFiles = allFiles.filter(file => !file.startsWith('blog/'));
 
-  for (const file of files) {
-    if (file === 'index.md') continue;
-    if (file === 'footer.md') continue;
-    if (file.startsWith('blog/')) {
-      // Only add the blog index page once
-      if (!pages.find(p => p.url === '/blog.html')) {
-        pages.push({ url: '/blog.html', title: 'Blog' });
-      }
-      continue;
-    }
-
+  for (const file of pageFiles) {
     const content = await fs.readFile(path.join(inputDir, file), 'utf-8');
-    const { metadata } = await processMarkdown(content);
+    const { html, metadata } = await processMarkdown(content);
     pages.push({
+      ...metadata,
       url: '/' + file.replace('.md', '.html'),
-      title: metadata.title
+      content: html
     });
   }
 
-  // Remove home page, sort remaining pages, then add home page back at start
-  const homePage = pages.shift();
-  pages.sort((a, b) => a.title.localeCompare(b.title));
-  pages.unshift(homePage);
+  // check if the index.html exists in the pages array
+  const indexPage = pages.find(page => page.url === '/index.html');
+  if (!indexPage) {
+    pages.push({
+      title: 'Home',
+      url: '/index.html',
+      content: ''
+    });
+  }
+
+  // check if the theme has a blog page
+  const theme = await getTheme();
+  const themeBlogPath = path.join(__dirname, `themes/${theme}/blog.ejs`);
+  const hasBlogPage = await fs.pathExists(themeBlogPath);
+  const hasCustomBlogTemplate = await fs.pathExists(path.join(process.cwd(), 'templates/blog.ejs'));
+
+  if (hasBlogPage || hasCustomBlogTemplate) {
+    pages.push({
+      title: 'Blog',
+      description: 'All blog posts',
+      url: '/blog.html',
+      html: ''
+    });
+  }
 
   return pages;
 }
 
-async function copyImages(inputDir, outputDir) {
+async function copyImages() {
+  const outputDir = await getOutputDir();
   const publicDir = path.join(outputDir, 'public');
-  const imagePattern = `**/*.{${IMAGE_EXTENSIONS.join(',')}}`;
 
-  const imageFiles = await glob(imagePattern, { cwd: inputDir });
+  await fs.emptyDir(publicDir);
+
+  const imagePattern = `**/*.{${IMAGE_EXTENSIONS.join(',')}}`;
+  const imageFiles = await glob(imagePattern, { cwd: inputDir, ignore: outputDir + '/**' });
 
   for (const file of imageFiles) {
     const sourcePath = path.join(inputDir, file);
@@ -111,146 +181,125 @@ async function copyImages(inputDir, outputDir) {
   }
 }
 
-async function getSiteMetadata(inputDir) {
-  const indexPath = path.join(inputDir, 'index.md');
-  // Remove trailing slashes, split on dashes,   capitalize first letter
-  let inputDirName = path.basename(inputDir).replace(/\/+$/, '').split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-
+async function getSiteMetadata() {
+  const config = await getConfig();
   let siteMetadata = {
-    name: inputDirName,
-    tagline: ''
+    name: config.name,
+    tagline: config.description
   };
-
-  if (await fs.pathExists(indexPath)) {
-    const content = await fs.readFile(indexPath, 'utf-8');
-    const { metadata } = await processMarkdown(content);
-    if (metadata.name) siteMetadata.name = metadata.name;
-    if (metadata.tagline) siteMetadata.tagline = metadata.tagline;
-  }
 
   return siteMetadata;
 }
 
-async function getFooterContent(inputDir, siteMetadata) {
-  const footerPath = path.join(inputDir, 'footer.md');
-
-  if (await fs.pathExists(footerPath)) {
-    const content = await fs.readFile(footerPath, 'utf-8');
-    const { html } = await processMarkdown(content);
-    return html;
-  }
-
+async function getFooterContent() {
+  const config = await getConfig();
   let currentYear = new Date().getFullYear();
-
-  return `Built with <a href="https://github.com/mandava/pagebrew" class="underline">Pagebrew</a> | © ${currentYear} ${siteMetadata.name}`;
+  return config.footer || `© ${currentYear} ${config.name} | Built with <a href="https://pagebrew.dev" class="underline">Pagebrew</a>`;
 }
 
-async function generate(inputDir, outputDir, options = {}) {
+async function generate(options = {}) {
   try {
-    if (!await fs.pathExists(inputDir)) {
-      console.warn(`Input directory "${inputDir}" does not exist`);
-      process.exit(1);
-    }
+    const inputDir = process.cwd();
+    const outputDir = await getOutputDir();
+    const config = await getConfig();
 
     const mdFiles = await glob('**/*.md', { cwd: inputDir });
     if (mdFiles.length === 0) {
       console.warn('⚠️  Warning: No markdown files found in input directory');
     }
 
-    const theme = options.theme || 'minimal';
+    if (options.theme) {
+      await updateConfig({ theme: options.theme });
+    }
 
-    debug('🧹 Cleaning output directory...', options);
+    const theme = await getTheme();
+
     await fs.emptyDir(outputDir);
-
-    debug('📸 Copying images...', options);
-    await copyImages(inputDir, outputDir);
-
-    debug(`🎨 Using theme: ${theme}`, options);
-    debug('🍺 Brewing your site...', options);
     await fs.ensureDir(path.join(outputDir, 'blog'));
 
     const templateDir = path.join(inputDir, 'templates');
     const hasCustomTemplates = await fs.pathExists(templateDir);
 
-    const files = await glob('**/*.md', { cwd: inputDir });
-    const posts = await getAllPosts(inputDir);
-    const pages = await getAllPages(inputDir);
-    const siteMetadata = await getSiteMetadata(inputDir);
-    const footerContent = await getFooterContent(inputDir, siteMetadata);
-    debug('📝 Processing markdown files...', options);
+    const posts = await getAllPosts();
+    const pages = await getAllPages();
 
-    // First process all markdown files
-    for (const file of files) {
-      if (file === 'footer.md') continue;
+    const siteMetadata = await getSiteMetadata();
+    const footerContent = await getFooterContent();
 
-      const content = await fs.readFile(path.join(inputDir, file), 'utf-8');
-      const { html, metadata } = await processMarkdown(content, posts, options);
+    let themeDir = path.join(__dirname, `themes/${theme}`);
+    let themeExists = await fs.pathExists(themeDir);
 
-      const isIndex = file === 'index.md';
-      const isBlogPost = file.startsWith('blog/');
-      const template = isBlogPost ? 'post' : (isIndex ? 'index' : 'base');
+    if (hasCustomTemplates) {
+      await fs.ensureDir(path.join(process.cwd(), 'templates'));
+      if (themeExists) {
+        await fs.copy(themeDir, path.join(__dirname, 'templates'));
+      }
+      await fs.copy(path.join(process.cwd(), 'templates'), path.join(__dirname, 'templates'));
+    }
 
-      const customTemplatePath = path.join(templateDir, `${template}.ejs`);
-      const templatePath = hasCustomTemplates && await fs.pathExists(customTemplatePath)
-        ? customTemplatePath
+    if (!hasCustomTemplates && !themeExists) {
+      console.error(`⚠️  Error: Either custom templates or theme must exist. \n Update your pagebrew.config.json file with a valid theme (minimal, aurora, frappe)`);
+      process.exit(1);
+    }
+
+    // Create menu if not exists
+    let menu = config.menu || [];
+    if (!config.menu) {
+      menu = await createNavMenu();
+      await updateConfig({ menu });
+    }
+
+    // Generate blog posts
+    for (const post of posts) {
+      const currentPage = '/blog.html';
+      const templatePath = hasCustomTemplates
+        ? path.join(__dirname, 'templates', 'post.ejs')
+        : path.join(__dirname, `themes/${theme}`, `post.ejs`);
+
+      const templateFn = await getTemplate(templatePath);
+      const rendered = templateFn({
+        post,
+        menu,
+        siteMetadata,
+        footerContent,
+        currentPage
+      });
+
+      await fs.outputFile(path.join(outputDir, 'blog', path.basename(post.url)), rendered);
+    }
+
+    // Generate pages
+    for (const page of pages) {
+      const isIndex = page.url === '/index.html';
+      const isBlog = page.url === '/blog.html';
+      const template = isIndex ? 'index' : isBlog ? 'blog' : 'base';
+
+      const templatePath = hasCustomTemplates
+        ? path.join(__dirname, 'templates', `${template}.ejs`)
         : path.join(__dirname, `themes/${theme}`, `${template}.ejs`);
 
       let currentPage = '/';
       if (!isIndex) {
-        currentPage = isBlogPost ? '/blog.html' : '/' + file.replace('.md', '.html');
+        currentPage = page.url;
       }
 
       const templateFn = await getTemplate(templatePath);
       const rendered = templateFn({
-        content: html,
-        metadata,
+        page,
         posts,
-        pages,
+        menu,
         currentPage,
         siteMetadata,
         footerContent
       });
 
-      let outFile;
-      if (isIndex) {
-        outFile = path.join(outputDir, 'index.html');
-      } else if (isBlogPost) {
-        outFile = path.join(outputDir, 'blog', path.basename(file).replace('.md', '.html'));
-      } else {
-        outFile = path.join(outputDir, file.replace('.md', '.html'));
-      }
-
+      let outFile = path.join(outputDir, page.url);
       await fs.outputFile(outFile, rendered);
     }
 
-    // Then generate the blog index page
-    const customBlogTemplatePath = path.join(templateDir, 'blog.ejs');
-    const defaultBlogTemplatePath = path.join(__dirname, `themes/${theme}`, 'blog.ejs');
 
-    if (await fs.pathExists(customBlogTemplatePath) || await fs.pathExists(defaultBlogTemplatePath)) {
-      const blogTemplatePath = hasCustomTemplates && await fs.pathExists(customBlogTemplatePath)
-        ? customBlogTemplatePath
-        : defaultBlogTemplatePath;
-
-      const blogTemplateFn = await getTemplate(blogTemplatePath);
-      const blogRendered = blogTemplateFn({
-        posts,
-        pages,
-        currentPage: '/blog.html',
-        metadata: {
-          title: 'Blog',
-          description: 'All blog posts'
-        },
-        siteMetadata,
-        footerContent
-      });
-
-      await fs.outputFile(path.join(outputDir, 'blog.html'), blogRendered);
-    }
-
-
-    debug('🎨 Processing styles...', options);
-    await processCSS(outputDir, theme);
+    await copyImages();
+    await processCSS();
 
     console.log(`🎉 Site built successfully!`);
   } catch (error) {
@@ -259,57 +308,38 @@ async function generate(inputDir, outputDir, options = {}) {
   }
 }
 
-async function watch(inputDir, outputDir, options = {}) {
+async function watch(options = {}) {
+  const inputDir = process.cwd();
+  const outputDir = await getOutputDir();
   const publicDir = path.join(outputDir, 'public');
 
   try {
-    debug('👀 Watching for changes...', options);
-
     // Initial build
-    await generate(inputDir, outputDir, options);
+    await generate(options);
 
+    // Watch for changes
     chokidar.watch(inputDir, {
       ignoreInitial: true,
-      ignored: (path, stats) =>
-        stats?.isFile() &&
-        !path.endsWith('.md') &&
-        !IMAGE_EXTENSIONS.some(ext => path.endsWith(`.${ext}`))
+      interval: 1000,
+      persistent: true,
+      awaitWriteFinish: {
+        stabilityThreshold: 1000,
+        pollInterval: 1000
+      }
     }).on('all', async (event, file) => {
-      debug(`📝 ${event}: ${file}`, options);
-
-      // If it's an image file, copy to public directory
-      if (IMAGE_EXTENSIONS.some(ext => file.endsWith(`.${ext}`))) {
-        const relativePath = path.relative(inputDir, file);
-        const targetPath = path.join(publicDir, relativePath);
-
-        if (event === 'unlink') {
-          await fs.remove(targetPath);
-          debug(`🗑️  Removed image: ${relativePath}`, options);
-        } else {
-          await fs.ensureDir(path.dirname(targetPath));
-          await fs.copy(file, targetPath);
-          debug(`📸 Updated image: ${relativePath}`, options);
-        }
-      } else {
-        // Regenerate site for markdown changes
-        await generate(inputDir, outputDir, options);
+      if (file.endsWith('.md')) {
+        await generate(options);
       }
     });
 
-    chokidar.watch(inputDir, {
-      ignoreInitial: true,
-      ignored: (path, stats) =>
-        stats?.isFile() &&
-        !path.endsWith('.ejs') &&
-        !path.endsWith('.html')
-    }).on('all', async (event, file) => {
-      debug(`🎨 ${event}: ${file}`, options);
-      await processCSS(outputDir);
-    });
   } catch (error) {
     console.error('Error in watch mode:', error);
     throw error;
   }
 }
 
-module.exports = { generate, watch };
+async function build(options = {}) {
+  await generate(options);
+}
+
+module.exports = { generate, watch, build };

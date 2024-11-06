@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= metadata.title %> | <%= siteMetadata.name %></title>
-    <meta name="description" content="<%= metadata.description %>">
+    <title><%= page.title %> | <%= siteMetadata.name %></title>
+    <meta name="description" content="<%= page.description %>">
     <link href="/css/style.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -14,11 +14,9 @@
     <main class="max-w-2xl mx-auto px-6 py-12">
         <% if (posts && posts.length > 0) { %>
             <%
-            // Define color classes array
             const titleColors = ['text-rose-love', 'text-rose-foam', 'text-rose-gold'];
 
             posts.forEach((post, index) => {
-                // Get color based on index, cycling through colors
                 const colorClass = titleColors[index % titleColors.length];
             %>
                 <article class="mb-16">

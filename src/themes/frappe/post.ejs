@@ -5,9 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>
-        <%= metadata.title %> | <%= siteMetadata.name %>
+        <%= post.title %> | <%= siteMetadata.name %>
     </title>
-    <meta name="description" content="<%= metadata.description %>">
+    <meta name="description" content="<%= post.description %>">
     <link href="/css/style.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -20,39 +20,39 @@
             <article class="prose prose-invert max-w-none mx-auto prose-img:rounded-lg">
                 <header class="mb-8 not-prose">
                     <div class="space-y-3 md:space-y-4">
-                        <h1 class="text-3xl md:text-4xl font-medium text-rose-love"><%= metadata.title %></h1>
+                        <h1 class="text-3xl md:text-4xl font-medium text-rose-love"><%= post.title %></h1>
                         <div class="flex items-center gap-2">
-                            <span class="text-sm text-rose-muted"><%= metadata.date.toLocaleDateString() %></span>
-                            <% if (metadata.tags && metadata.tags.length > 0) { %>
-                                <span class="text-xs md:text-sm font-medium text-rose-foam"><%= metadata.tags[0] %></span>
+                            <span class="text-sm text-rose-muted"><%= post.date.toLocaleDateString() %></span>
+                            <% if (post.tags && post.tags.length > 0) { %>
+                                <span class="text-xs md:text-sm font-medium text-rose-foam"><%= post.tags[0] %></span>
                             <% } %>
                         </div>
                     </div>
                 </header>
-                <%- content %>
+                <%- post.content %>
             </article>
-            <% if (metadata.nextPost || metadata.previousPost) { %>
+            <% if (post.nextPost || post.previousPost) { %>
                 <nav class="mt-8 pt-8 border-t border-rose-overlay/50">
                     <div class="flex justify-between items-center">
-                        <% if (metadata.previousPost) { %>
-                            <a href="<%= metadata.previousPost.url %>" class="group flex items-center gap-2">
+                        <% if (post.previousPost) { %>
+                            <a href="<%= post.previousPost.url %>" class="group flex items-center gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-rose-muted group-hover:text-rose-love">
                                     <path d="m15 18-6-6 6-6"/>
                                 </svg>
                                 <div class="text-sm">
                                     <div class="text-rose-muted">Previous</div>
-                                    <div class="font-medium text-rose-love group-hover:text-rose-love"><%= metadata.previousPost.title %></div>
+                                    <div class="font-medium text-rose-love group-hover:text-rose-love"><%= post.previousPost.title %></div>
                                 </div>
                             </a>
                         <% } else { %>
                             <div></div>
                         <% } %>
 
-                        <% if (metadata.nextPost) { %>
-                            <a href="<%= metadata.nextPost.url %>" class="group flex items-center gap-2 text-right">
+                        <% if (post.nextPost) { %>
+                            <a href="<%= post.nextPost.url %>" class="group flex items-center gap-2 text-right">
                                 <div class="text-sm">
                                     <div class="text-rose-muted">Next</div>
-                                    <div class="font-medium text-rose-love group-hover:text-rose-love"><%= metadata.nextPost.title %></div>
+                                        <div class="font-medium text-rose-love group-hover:text-rose-love"><%= post.nextPost.title %></div>
                                 </div>
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-rose-muted group-hover:text-rose-love">
                                     <path d="m9 18 6-6-6-6"/>
