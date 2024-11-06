@@ -80,6 +80,10 @@ async function processCSS() {
     path.join(__dirname, 'templates/**/*.ejs')
   ];
 
+  tailwindConfig.plugins = [
+    require('@tailwindcss/typography')
+  ]
+
   const result = await postcss([
     tailwindcss(tailwindConfig),
     autoprefixer
