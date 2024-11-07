@@ -1,6 +1,6 @@
 {
   "name": "pagebrew",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Pagebrew is a CLI tool for creating static sites from markdown files",
   "main": "index.js",
   "bin": {

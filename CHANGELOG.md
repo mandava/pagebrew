@@ -1,6 +1,11 @@
 
 # Changelog
 
+## 1.4.0
+
+- Hash CSS file name
+- Add support for public directory
+
 ## 1.3.0
 
 - Update Tailwind integration
