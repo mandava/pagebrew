@@ -2,10 +2,13 @@ const fs = require('fs-extra');
 
 async function getConfig() {
     const configPath = `${process.cwd()}/pagebrew.config.json`;
+    const defaultConfig = require(`${__dirname}/../src/pagebrew-base.config.json`);
     if (!fs.existsSync(configPath)) {
         await createConfig();
     }
-    return await fs.readJson(configPath);
+
+    const config = await fs.readJson(configPath);
+    return { ...defaultConfig, ...config };
 }
 
 async function createConfig() {

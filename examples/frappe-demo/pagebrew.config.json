@@ -1,6 +1,6 @@
 {
-  "name": "Frappe Demo",
-  "description": "Welcome to Frappe Demo",
+  "name": "Frappe",
+  "description": "Welcome to Frappe",
   "theme": "frappe",
   "outputDir": "dist",
   "menu": [

@@ -8,6 +8,7 @@ const chokidar = require('chokidar');
 const { processMarkdown } = require('./markdown');
 const { getTemplate, debug } = require('./utils');
 const { getConfig, updateConfig } = require('./config');
+const crypto = require('crypto');
 
 const inputDir = process.cwd();
 
@@ -38,6 +39,16 @@ async function createNavMenu() {
     };
   });
   return menu;
+}
+
+async function copyPublicDir() {
+  const outputDir = await getOutputDir();
+  const outputPublicDir = path.join(outputDir, 'public');
+  const inputPublicDir = path.join(inputDir, 'public');
+
+  if (await fs.pathExists(inputPublicDir)) {
+    await fs.copy(inputPublicDir, outputPublicDir);
+  }
 }
 
 async function processCSS() {
@@ -75,7 +86,7 @@ async function processCSS() {
   }
 
   tailwindConfig.content = [
-    path.join(outputDir, '**/*.html'),
+    path.join(inputDir, '**/*.md'),
     path.join(__dirname, `themes/${theme}/**/*.ejs`),
     path.join(__dirname, 'templates/**/*.ejs')
   ];
@@ -92,7 +103,13 @@ async function processCSS() {
     to: path.join(outputDir, 'css/style.css')
   });
 
-  await fs.outputFile(path.join(outputDir, 'css/style.css'), result.css);
+  // Hash the CSS content using MD5
+  const hash = crypto.createHash('md5').update(result.css).digest('hex');
+  const hashedFileName = `style.${hash}.css`;
+
+  await fs.outputFile(path.join(outputDir, 'css', hashedFileName), result.css);
+
+  return hashedFileName;
 }
 
 async function getAllPosts() {
@@ -267,6 +284,8 @@ async function generate(options = {}) {
       await updateConfig({ menu });
     }
 
+    const cssFileName = await processCSS();
+
     // Generate blog posts
     for (const post of posts) {
       const currentPage = '/blog.html';
@@ -280,7 +299,8 @@ async function generate(options = {}) {
         menu,
         siteMetadata,
         footerContent,
-        currentPage
+        currentPage,
+        cssFileName
       });
 
       await fs.outputFile(path.join(outputDir, 'blog', path.basename(post.url)), rendered);
@@ -308,16 +328,16 @@ async function generate(options = {}) {
         menu,
         currentPage,
         siteMetadata,
-        footerContent
+        footerContent,
+        cssFileName
       });
 
       let outFile = path.join(outputDir, page.url);
       await fs.outputFile(outFile, rendered);
     }
 
-
     await copyImages();
-    await processCSS();
+    await copyPublicDir();
 
     console.log(`🎉 Site built successfully!`);
   } catch (error) {
