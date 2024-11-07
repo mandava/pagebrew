@@ -1,6 +1,6 @@
 # Pagebrew
 
-Static site generator for your markdown files.
+[Pagebrew](https://pagebrew.dev) is a static site generator for your markdown files.
 
 
 ## Features
@@ -60,9 +60,9 @@ Pagebrew comes with a minimal theme by default. You can use the `-t` option to s
 
 Available themes:
 
-- `minimal`
-- `aurora`
-- `frappe`
+- [minimal](https://minimal.pagebrew.dev)
+- [aurora](https://aurora.pagebrew.dev)
+- [frappe](https://frappe.pagebrew.dev)
 
 ```bash
 npx pagebrew serve -t aurora

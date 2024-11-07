@@ -1,6 +1,10 @@
 
 # Changelog
 
+## 1.3.0
+
+- Update Tailwind integration
+
 ## 1.2.0
 
 - Update server to handle port conflicts
